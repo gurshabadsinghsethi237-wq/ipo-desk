@@ -1,0 +1,254 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>IPO Desk — calculator & tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#EEF1EA; --card:#FBFCF8; --ink:#1C2B3A; --muted:#5B6B78; --line:#D3DACF;
+  --gold:#E8A317; --gold-soft:#FBEFD0; --gain:#1F7A4D; --loss:#B3261E; --field:#F4F6F0;
+  box-sizing:border-box;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --paper:#141B22; --card:#1B242D; --ink:#E6ECE4; --muted:#93A2AD; --line:#2C3843;
+    --gold:#F0B43A; --gold-soft:#3A2F14; --gain:#4CC38A; --loss:#F07167; --field:#222D37;
+  }
+}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:16px;line-height:1.5}
+.num{font-variant-numeric:tabular-nums}
+h1,h2,h3{font-family:"Bricolage Grotesque","Instrument Sans",system-ui,sans-serif;margin:0;line-height:1.1}
+.wrap{max-width:1080px;margin:0 auto;padding:28px 20px 64px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:24px}
+header h1{font-size:clamp(2rem,6vw,3.2rem);font-weight:800;letter-spacing:-.02em}
+header p{margin:4px 0 0;color:var(--muted);max-width:52ch}
+.tabs{display:flex;gap:4px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:4px}
+.tabs button{border:0;background:none;color:var(--muted);font:600 .95rem/1 sans-serif;font-family:inherit;padding:10px 18px;border-radius:999px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--ink);color:var(--paper)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:20px}
+@media (max-width:820px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px}
+.panel h2{font-size:1.25rem;font-weight:700;margin-bottom:16px}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.fields .full{grid-column:1/-1}
+label{display:block;font-size:.85rem;font-weight:600;color:var(--muted);margin-bottom:6px}
+input,select{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:8px;background:var(--field);color:var(--ink);font:500 1rem sans-serif;font-family:inherit}
+.hint{font-size:.8rem;color:var(--muted);margin-top:4px}
+.ticket{position:relative;background:var(--ink);color:var(--paper);border-radius:14px;padding:26px 24px 22px;overflow:hidden}
+.ticket::after{content:"";position:absolute;left:0;right:0;top:118px;border-top:2px dashed color-mix(in srgb,var(--paper) 30%,transparent)}
+.ticket .cap{font-size:.9rem;opacity:.75}
+.ticket .big{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;font-size:clamp(2.4rem,8vw,3.6rem);letter-spacing:-.03em;line-height:1;margin-top:6px}
+.ticket .big.up{color:var(--gold)} .ticket .big.down{color:#FF8A80}
+.rows{margin-top:34px;display:grid;grid-template-columns:1fr 1fr;gap:14px 20px}
+.rows div span{display:block;font-size:.8rem;opacity:.7}
+.rows div strong{font-size:1.1rem}
+.odds{margin-top:20px;background:var(--gold-soft);color:var(--ink);border-radius:10px;padding:14px 16px}
+.odds strong{font-size:1.05rem}
+.bar{height:8px;background:var(--line);border-radius:6px;margin-top:10px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--gold);width:0;transition:width .3s}
+.note{font-size:.8rem;color:var(--muted);margin-top:14px}
+.summary{display:flex;flex-wrap:wrap;gap:28px;margin-bottom:20px}
+.summary div span{display:block;font-size:.85rem;color:var(--muted)}
+.summary div strong{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-size:1.6rem}
+.gain{color:var(--gain)} .loss{color:var(--loss)}
+.btn{border:0;border-radius:8px;padding:11px 18px;font:600 .95rem sans-serif;font-family:inherit;cursor:pointer;background:var(--gold);color:#1C2B3A}
+.btn.ghost{background:none;border:1px solid var(--line);color:var(--ink)}
+.btn.small{padding:7px 12px;font-size:.85rem}
+.tablebox{overflow-x:auto;margin-top:18px}
+table{width:100%;border-collapse:collapse;min-width:720px}
+th,td{text-align:left;padding:12px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font-size:.8rem;color:var(--muted);font-weight:600}
+td select{padding:6px 8px;font-size:.9rem;width:auto}
+td input{padding:6px 8px;font-size:.9rem;width:110px}
+.pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:.8rem;font-weight:600;background:var(--field)}
+.empty{padding:36px 10px;text-align:center;color:var(--muted)}
+.status{font-size:.8rem;color:var(--muted);margin-top:10px;min-height:1.2em}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>IPO Desk</h1>
+      <p>Work out what an IPO application costs, what it could make on listing day, and keep track of every IPO you apply for.</p>
+    </div>
+    <div class="tabs" role="tablist">
+      <button role="tab" id="tab-calc" aria-selected="true">Calculator</button>
+      <button role="tab" id="tab-track" aria-selected="false">Tracker</button>
+    </div>
+  </header>
+
+  <section id="view-calc" class="grid">
+    <div class="panel">
+      <h2>Issue details</h2>
+      <div class="fields">
+        <div class="full"><label for="c-name">IPO name</label><input id="c-name" placeholder="e.g. Acme Tech Ltd"></div>
+        <div><label for="c-price">Issue price (₹)</label><input id="c-price" type="number" min="0" step="0.01" value="105"><div class="hint">Upper end of price band</div></div>
+        <div><label for="c-lot">Lot size (shares)</label><input id="c-lot" type="number" min="1" value="142"></div>
+        <div><label for="c-lots">Lots to apply</label><input id="c-lots" type="number" min="1" value="1"><div class="hint" id="c-maxlots"></div></div>
+        <div><label for="c-gmp">Expected premium (₹/share)</label><input id="c-gmp" type="number" step="0.01" value="25"><div class="hint">GMP or your estimate; negative for a discount</div></div>
+        <div class="full"><label for="c-sub">Retail subscription (times)</label><input id="c-sub" type="number" min="0" step="0.01" value="12"><div class="hint">From the exchange's final-day data</div></div>
+      </div>
+      <div style="margin-top:18px"><button class="btn" id="c-save">Add to tracker</button></div>
+      <div class="status" id="c-status" role="status"></div>
+    </div>
+    <div>
+      <div class="ticket" aria-live="polite">
+        <div class="cap">Estimated listing gain</div>
+        <div class="big num up" id="r-gain">₹0</div>
+        <div class="cap num" id="r-pct">0% on investment</div>
+        <div class="rows">
+          <div><span>Amount blocked</span><strong class="num" id="r-inv">₹0</strong></div>
+          <div><span>Shares</span><strong class="num" id="r-shares">0</strong></div>
+          <div><span>Expected listing price</span><strong class="num" id="r-list">₹0</strong></div>
+          <div><span>Value on listing</span><strong class="num" id="r-val">₹0</strong></div>
+        </div>
+      </div>
+      <div class="odds">
+        <strong id="r-odds">Allotment chance: —</strong>
+        <div class="bar"><i id="r-bar"></i></div>
+        <div style="font-size:.85rem;margin-top:8px" id="r-odds-note"></div>
+      </div>
+      <p class="note">Estimates only. Grey market premium is unofficial and often wrong; listing prices can fall below the issue price. Retail allotment in an oversubscribed issue is a lottery of one lot per winning applicant, so applying for more lots rarely improves your odds.</p>
+    </div>
+  </section>
+
+  <section id="view-track" hidden>
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+        <h2 style="margin:0">Your IPOs</h2>
+        <button class="btn" id="t-add">Add IPO</button>
+      </div>
+      <form id="t-form" class="fields" style="margin-top:18px" hidden onsubmit="return false">
+        <div class="full"><label for="f-name">IPO name</label><input id="f-name" required></div>
+        <div><label for="f-price">Issue price (₹)</label><input id="f-price" type="number" min="0" step="0.01" required></div>
+        <div><label for="f-lot">Lot size</label><input id="f-lot" type="number" min="1" required></div>
+        <div><label for="f-lots">Lots applied</label><input id="f-lots" type="number" min="1" value="1"></div>
+        <div><label for="f-date">Listing date</label><input id="f-date" type="date"></div>
+        <div class="full" style="display:flex;gap:10px">
+          <button class="btn" id="f-save" type="button">Save IPO</button>
+          <button class="btn ghost" id="f-cancel" type="button">Cancel</button>
+        </div>
+      </form>
+      <div class="summary" style="margin-top:22px">
+        <div><span>Applied</span><strong class="num" id="s-count">0</strong></div>
+        <div><span>Allotted</span><strong class="num" id="s-allot">0</strong></div>
+        <div><span>Invested in allotments</span><strong class="num" id="s-inv">₹0</strong></div>
+        <div><span>Listing P&amp;L</span><strong class="num" id="s-pnl">₹0</strong></div>
+      </div>
+      <div class="tablebox">
+        <table>
+          <thead><tr><th>IPO</th><th>Price × lot</th><th>Listing date</th><th>Status</th><th>Listing price (₹)</th><th>P&amp;L</th><th></th></tr></thead>
+          <tbody id="t-body"></tbody>
+        </table>
+      </div>
+      <div class="status" id="t-status" role="status"></div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const inr = n => (n<0?"−":"") + "₹" + Math.abs(Math.round(n)).toLocaleString("en-IN");
+  const RETAIL_CAP = 200000;
+
+  function show(which){
+    const calc = which==="calc";
+    $("view-calc").hidden=!calc; $("view-track").hidden=calc;
+    $("tab-calc").setAttribute("aria-selected",calc); $("tab-track").setAttribute("aria-selected",!calc);
+  }
+  $("tab-calc").onclick=()=>show("calc"); $("tab-track").onclick=()=>show("track");
+
+  const val = id => parseFloat($(id).value)||0;
+  function calc(){
+    const price=val("c-price"), lot=Math.max(1,Math.floor(val("c-lot"))), lots=Math.max(1,Math.floor(val("c-lots")));
+    const gmp=val("c-gmp"), sub=val("c-sub");
+    const shares=lot*lots, inv=shares*price, listP=price+gmp, value=shares*listP, gain=value-inv;
+    const pct= inv? gain/inv*100 : 0;
+    const maxLots = price&&lot ? Math.floor(RETAIL_CAP/(price*lot)) : 0;
+    $("c-maxlots").textContent = maxLots ? `Retail max: ${maxLots} lots (₹2 lakh cap)` : "";
+    $("c-maxlots").style.color = lots>maxLots && maxLots ? "var(--loss)" : "";
+    $("r-gain").textContent=(gain>=0?"+":"")+inr(gain);
+    $("r-gain").className="big num "+(gain>=0?"up":"down");
+    $("r-pct").textContent=`${pct>=0?"+":""}${pct.toFixed(1)}% on investment`;
+    $("r-inv").textContent=inr(inv); $("r-shares").textContent=shares.toLocaleString("en-IN");
+    $("r-list").textContent="₹"+listP.toLocaleString("en-IN",{maximumFractionDigits:2}); $("r-val").textContent=inr(value);
+    const odds = sub<=1 ? 100 : 100/sub;
+    $("r-odds").textContent = `Allotment chance: about ${odds>=10?Math.round(odds):odds.toFixed(1)}%`;
+    $("r-bar").style.width = Math.min(100,odds)+"%";
+    $("r-odds-note").textContent = sub<=1 ? "Undersubscribed: every valid application should get shares."
+      : `Roughly 1 in ${Math.round(sub)} retail applicants gets one lot. Expected gain ≈ ${inr(gain/lots*odds/100)} per application.`;
+  }
+  ["c-price","c-lot","c-lots","c-gmp","c-sub"].forEach(id=>$(id).addEventListener("input",calc));
+  calc();
+
+  let ipos=[];
+  const LS_KEY="ipo-desk-tracker";
+  try{ ipos=JSON.parse(localStorage.getItem(LS_KEY)||"[]")||[]; }catch(e){ ipos=[]; }
+  function persist(){ try{ localStorage.setItem(LS_KEY,JSON.stringify(ipos)); }catch(e){} }
+
+  const STATUSES=["Applied","Allotted","Not allotted","Listed","Sold"];
+  function pnl(x){
+    if(!["Allotted","Listed","Sold"].includes(x.status) || !x.listPrice) return null;
+    return (x.listPrice - x.price) * x.lot;
+  }
+  function render(){
+    const body=$("t-body"); body.innerHTML="";
+    if(!ipos.length){
+      const tr=document.createElement("tr"); const td=document.createElement("td");
+      td.colSpan=7; td.className="empty"; td.textContent="No IPOs yet. Add one here, or send one over from the calculator.";
+      tr.appendChild(td); body.appendChild(tr);
+    }
+    let allot=0, inv=0, total=0;
+    ipos.forEach((x,i)=>{
+      if(["Allotted","Listed","Sold"].includes(x.status)){ allot++; inv+=x.price*x.lot; }
+      const p=pnl(x); if(p!==null) total+=p;
+      const tr=document.createElement("tr");
+      const name=document.createElement("td"); const b=document.createElement("strong"); b.textContent=x.name; name.appendChild(b);
+      const pl=document.createElement("td"); pl.className="num"; pl.textContent=`₹${x.price} × ${x.lot} · ${x.lots} lot${x.lots>1?"s":""}`;
+      const dt=document.createElement("td"); dt.textContent=x.date? new Date(x.date+"T00:00").toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"}) : "—";
+      const st=document.createElement("td"); const sel=document.createElement("select");
+      STATUSES.forEach(s=>{const o=document.createElement("option");o.textContent=s;if(s===x.status)o.selected=true;sel.appendChild(o);});
+      sel.onchange=()=>{ x.status=sel.value; persist(); render(); }; st.appendChild(sel);
+      const lp=document.createElement("td"); const inp=document.createElement("input"); inp.type="number"; inp.step="0.01"; inp.min="0";
+      inp.value=x.listPrice||""; inp.placeholder="—";
+      inp.onchange=()=>{ x.listPrice=parseFloat(inp.value)||0; persist(); render(); }; lp.appendChild(inp);
+      const pc=document.createElement("td"); pc.className="num";
+      if(p===null){ pc.innerHTML='<span class="pill">—</span>'; } else { pc.textContent=(p>=0?"+":"")+inr(p); pc.className="num "+(p>=0?"gain":"loss"); }
+      const del=document.createElement("td"); const rm=document.createElement("button"); rm.className="btn ghost small"; rm.textContent="Remove";
+      rm.onclick=()=>{ if(confirm(`Remove ${x.name}?`)){ ipos.splice(i,1); persist(); render(); } }; del.appendChild(rm);
+      [name,pl,dt,st,lp,pc,del].forEach(c=>tr.appendChild(c)); body.appendChild(tr);
+    });
+    $("s-count").textContent=ipos.length; $("s-allot").textContent=allot; $("s-inv").textContent=inr(inv);
+    $("s-pnl").textContent=(total>=0?"+":"")+inr(total); $("s-pnl").className="num "+(total>0?"gain":total<0?"loss":"");
+  }
+  function addIpo(o){ ipos.unshift({id:Date.now().toString(36),status:"Applied",listPrice:0,...o}); persist(); render(); }
+  render();
+
+  $("t-add").onclick=()=>{ $("t-form").hidden=false; $("f-name").focus(); };
+  $("f-cancel").onclick=()=>{ $("t-form").hidden=true; };
+  $("f-save").onclick=()=>{
+    const name=$("f-name").value.trim(), price=parseFloat($("f-price").value), lot=parseInt($("f-lot").value);
+    if(!name||!price||!lot){ $("t-status").textContent="Enter a name, issue price and lot size to save."; return; }
+    addIpo({name,price,lot,lots:Math.max(1,parseInt($("f-lots").value)||1),date:$("f-date").value});
+    ["f-name","f-price","f-lot","f-date"].forEach(id=>$(id).value=""); $("f-lots").value=1;
+    $("t-form").hidden=true; $("t-status").textContent=`Saved ${name}.`;
+  };
+  $("c-save").onclick=()=>{
+    const name=$("c-name").value.trim()||"Untitled IPO";
+    addIpo({name,price:val("c-price"),lot:Math.max(1,Math.floor(val("c-lot"))),lots:Math.max(1,Math.floor(val("c-lots"))),date:""});
+    $("c-status").textContent=`Added ${name} to the tracker.`;
+  };
+})();
+</script>
+</body>
+</html>
