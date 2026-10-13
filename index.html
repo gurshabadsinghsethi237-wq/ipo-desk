@@ -234,6 +234,20 @@ td input{padding:6px 8px;font-size:.9rem;width:110px}
   function addIpo(o){ ipos.unshift({id:Date.now().toString(36),status:"Applied",listPrice:0,...o}); persist(); render(); }
   render();
 
+
+const exp=document.createElement("button"); exp.className="btn ghost"; exp.id="t-export"; exp.textContent="Export to Excel"; exp.style.marginLeft="auto";
+  $("t-add").before(exp);
+  exp.onclick=()=>{
+    if(!ipos.length){ $("t-status").textContent="Add an IPO first, then export."; return; }
+    const rows=[["IPO","Issue price","Lot size","Lots applied","Listing date","Status","Listing price","P&L"]];
+    ipos.forEach(x=>{ const p=pnl(x); rows.push([x.name,x.price,x.lot,x.lots,x.date||"",x.status,x.listPrice||"",p===null?"":Math.round(p)]); });
+   const csv=rows.map(r=>r.join(",")).join("\r\n");
+    const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});
+    const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+    a.download="ipo-tracker.csv";
+    document.body.appendChild(a); a.click(); a.remove();
+    $("t-status").textContent="Exported. Open the file in Excel.";
+  };
   $("t-add").onclick=()=>{ $("t-form").hidden=false; $("f-name").focus(); };
   $("f-cancel").onclick=()=>{ $("t-form").hidden=true; };
   $("f-save").onclick=()=>{
